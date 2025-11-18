@@ -33,15 +33,22 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Check if Docker Compose is installed (both old and new syntax)
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo "❌ Docker Compose is not installed"
     echo "Please install Docker Compose: https://docs.docker.com/compose/install/"
     exit 1
 fi
 
+# Determine which Docker Compose command to use
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    DOCKER_COMPOSE="docker compose"
+fi
+
 echo "🐳 Starting Docker containers..."
-docker-compose up -d
+$DOCKER_COMPOSE up -d
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
@@ -49,7 +56,7 @@ sleep 10
 
 echo ""
 echo "🗄️  Running database migrations..."
-docker-compose exec -T app alembic upgrade head
+$DOCKER_COMPOSE exec -T app alembic upgrade head
 
 echo ""
 echo "✅ Setup complete!"
@@ -68,5 +75,5 @@ echo ""
 echo "📖 For detailed instructions, see README.md and INSTALLATION.md"
 echo ""
 echo "🔍 To view logs:"
-echo "   docker-compose logs -f app"
+echo "   $DOCKER_COMPOSE logs -f app"
 echo ""
